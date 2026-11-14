@@ -1,0 +1,39 @@
+<div class="shell">
+  <aside class="shell__sidebar">
+    <div class="shell__brand">
+      <img src="icons/logos/acheva-letter.svg" alt="" class="shell__logo" />
+      <span>Management</span>
+    </div>
+
+    <nav class="shell__nav" aria-label="Main">
+      @for (item of nav(); track item.route) {
+        <a class="shell__item" [routerLink]="item.route" routerLinkActive="shell__item--active" #rla="routerLinkActive">
+          <img [src]="rla.isActive ? item.activeIcon : item.inactiveIcon" alt="" width="20" height="20" />
+          <span>{{ item.label }}</span>
+        </a>
+      }
+    </nav>
+
+    <button type="button" class="shell__logout" (click)="logout()">
+      <span aria-hidden="true">↩</span> Sign out
+    </button>
+  </aside>
+
+  <div class="shell__main">
+    <header class="shell__topbar">
+      <span class="shell__school">{{ account()?.school?.name }}</span>
+      <div class="shell__profile">
+        <app-notification-bell />
+        <div class="shell__avatar" aria-hidden="true">{{ initial() }}</div>
+        <div>
+          <p class="shell__name">{{ name() }}</p>
+          <p class="shell__office">{{ account()?.officeTitle }}</p>
+        </div>
+      </div>
+    </header>
+
+    <main class="shell__content">
+      <router-outlet />
+    </main>
+  </div>
+</div>

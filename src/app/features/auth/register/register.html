@@ -1,0 +1,114 @@
+<div class="login-shell">
+  <section class="login-banner">
+    <div class="login-banner__logo">
+      <img src="icons/logos/acheva-letter.svg" alt="Acheva" class="login-banner__mark" />
+      <img src="icons/logos/company-name-logo.svg" alt="Acheva" class="login-banner__name" />
+    </div>
+    <div class="login-banner__art">
+      <img src="images/auth/create-banner.png" alt="" class="login-banner__img" />
+      <img src="icons/auth/table-clock.svg" alt="" class="login-banner__float login-banner__float--clock" />
+      <img src="icons/auth/automate.svg" alt="" class="login-banner__float login-banner__float--automate" />
+      <img src="icons/auth/mobility-info.svg" alt="" class="login-banner__float login-banner__float--mobility" />
+    </div>
+    <h2 class="login-banner__title acva-heading-4 fw-400">The official record of every result</h2>
+    <p class="login-banner__tagline acva-para-1">
+      Results reach you only after the HOD and the Dean have signed them off.
+    </p>
+  </section>
+
+  <form class="login-form" [formGroup]="form" (ngSubmit)="submit()">
+    <div class="login-form__logo-md">
+      <img src="icons/logos/acheva-letter.svg" alt="Acheva" />
+      <img src="icons/logos/company-name-logo.svg" alt="Acheva" />
+    </div>
+
+    @if (loading()) {
+      <p class="acva-para-1 text-neutral-500 m-0">Checking your invitation…</p>
+    } @else if (problem()) {
+      <div class="login-form__head">
+        <h1 class="acva-heading-3 fw-500 m-0">This invite cannot be used</h1>
+        <p class="acva-para-1 text-neutral-500 m-0">{{ problem() }}</p>
+      </div>
+      <a routerLink="/login" class="login-form__submit register-link">Go to sign in</a>
+    } @else if (invite(); as invite) {
+      <div class="login-form__head">
+        <p class="acva-para-1 text-neutral-500 m-0">{{ invite.school.name }}</p>
+        <h1 class="acva-heading-3 fw-500 m-0">You are invited as {{ invite.officeTitle }}</h1>
+        <p class="acva-para-1 text-neutral-500 m-0">
+          Set up your account for <span class="register-email">{{ invite.email }}</span>.
+        </p>
+      </div>
+
+      <div class="register-names">
+        <label class="login-field register-title">
+          <span class="login-field__label">Title</span>
+          <span class="login-field__control">
+            <select formControlName="title" aria-label="Title">
+              @for (title of titles; track title) {
+                <option [value]="title">{{ title || 'None' }}</option>
+              }
+            </select>
+          </span>
+        </label>
+        <label class="login-field">
+          <span class="login-field__label">First name</span>
+          <span class="login-field__control" [class.login-field__control--error]="showError('firstname')">
+            <input type="text" formControlName="firstname" autocomplete="given-name" />
+          </span>
+        </label>
+      </div>
+
+      <label class="login-field">
+        <span class="login-field__label">Surname</span>
+        <span class="login-field__control" [class.login-field__control--error]="showError('lastname')">
+          <input type="text" formControlName="lastname" autocomplete="family-name" />
+        </span>
+      </label>
+
+      <label class="login-field">
+        <span class="login-field__label">Password</span>
+        <span class="login-field__control" [class.login-field__control--error]="showError('password')">
+          <img src="icons/general/lock-icon.svg" alt="" class="login-field__icon" />
+          <input
+            [type]="showPassword() ? 'text' : 'password'"
+            formControlName="password"
+            autocomplete="new-password"
+          />
+          <button
+            type="button"
+            class="login-field__eye"
+            (click)="showPassword.set(!showPassword())"
+            [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'"
+          >
+            {{ showPassword() ? 'Hide' : 'Show' }}
+          </button>
+        </span>
+        <span class="register-hint" [class.register-hint--error]="showError('password')">
+          At least 8 characters, with a capital letter, a number and a symbol.
+        </span>
+      </label>
+
+      <label class="login-field">
+        <span class="login-field__label">Confirm password</span>
+        <span class="login-field__control" [class.login-field__control--error]="showError('confirmPassword')">
+          <img src="icons/general/lock-icon.svg" alt="" class="login-field__icon" />
+          <input
+            [type]="showPassword() ? 'text' : 'password'"
+            formControlName="confirmPassword"
+            autocomplete="new-password"
+          />
+        </span>
+        @if (showError('confirmPassword')) {
+          <span class="register-hint register-hint--error">The passwords do not match.</span>
+        }
+      </label>
+
+      <button type="submit" class="login-form__submit" [disabled]="saving()">
+        {{ saving() ? 'Setting up…' : 'Create my account' }}
+      </button>
+      <p class="acva-para-2 text-neutral-500 m-0">
+        Already set up? <a routerLink="/login" class="register-inline">Sign in</a>
+      </p>
+    }
+  </form>
+</div>

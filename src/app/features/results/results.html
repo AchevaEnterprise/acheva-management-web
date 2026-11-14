@@ -1,0 +1,172 @@
+<header class="mg-page-head">
+  <div>
+    <h1>{{ isDvc() ? 'Results to vet' : 'Approved results' }}</h1>
+    <p>
+      @if (isDvc()) {
+        Result sheets the Deans have sent you. Approve each one, or return it to its Dean with a reason.
+      } @else {
+        Sheets the DVC has approved. Download each for the record and mark it filed.
+      }
+    </p>
+  </div>
+</header>
+
+<div class="mg-tabs" role="tablist">
+  @for (tab of tabs(); track tab.box) {
+    <button
+      type="button"
+      role="tab"
+      class="mg-tab"
+      [class.mg-tab--on]="box() === tab.box"
+      [attr.aria-selected]="box() === tab.box"
+      (click)="setBox(tab.box)"
+    >
+      {{ tab.label }}
+      @if (tab.box !== 'all' && list()?.counts?.[tab.box] !== undefined) {
+        <span class="mg-tab__count">{{ list()?.counts?.[tab.box] }}</span>
+      }
+    </button>
+  }
+</div>
+
+<section class="mg-card">
+  <div class="mg-filters">
+    <label class="mg-field">
+      <span class="mg-field__label">Search</span>
+      <input
+        class="mg-input"
+        type="search"
+        placeholder="Reg. no., name or department"
+        [value]="search()"
+        (input)="typeSearch($any($event.target).value)"
+      />
+    </label>
+    <label class="mg-field">
+      <span class="mg-field__label">Faculty</span>
+      <select class="mg-select" [value]="faculty()" (change)="setFilter('faculty', $any($event.target).value)">
+        <option value="">All faculties</option>
+        @for (faculty of filters().faculties; track faculty._id) {
+          <option [value]="faculty._id">{{ titleCase(faculty.name) }}</option>
+        }
+      </select>
+    </label>
+    <label class="mg-field">
+      <span class="mg-field__label">Department</span>
+      <select class="mg-select" [value]="department()" (change)="setFilter('department', $any($event.target).value)">
+        <option value="">All departments</option>
+        @for (department of departments(); track department._id) {
+          <option [value]="department._id">{{ titleCase(department.name) }}</option>
+        }
+      </select>
+    </label>
+    <label class="mg-field">
+      <span class="mg-field__label">Session</span>
+      <select class="mg-select" [value]="session()" (change)="setFilter('session', $any($event.target).value)">
+        <option value="">All sessions</option>
+        @for (session of filters().sessions; track session) {
+          <option [value]="session">{{ session }}</option>
+        }
+      </select>
+    </label>
+    <label class="mg-field">
+      <span class="mg-field__label">Semester</span>
+      <select class="mg-select" [value]="semester()" (change)="setFilter('semester', $any($event.target).value)">
+        <option value="">Both</option>
+        <option value="1ST SEMESTER">Harmattan</option>
+        <option value="2ND SEMESTER">Rain</option>
+      </select>
+    </label>
+    <label class="mg-field">
+      <span class="mg-field__label">Sheet</span>
+      <select class="mg-select" [value]="kind()" (change)="setFilter('kind', $any($event.target).value)">
+        <option value="">Every kind</option>
+        <option value="SEMESTER">Semester Result</option>
+        <option value="OMITTED">Omitted Result</option>
+        <option value="DEGREE">Degree Result</option>
+      </select>
+    </label>
+  </div>
+
+  @if (selectable() && selected().size > 0) {
+    <div class="bulk mg-banner">
+      <p>{{ selected().size }} {{ selected().size === 1 ? 'sheet' : 'sheets' }} selected</p>
+      <button type="button" class="mg-btn" [disabled]="approving()" (click)="approveSelected()">
+        {{ approving() ? 'Approving…' : 'Approve selected' }}
+      </button>
+    </div>
+  }
+
+  @if (loading() && !list()) {
+    @for (row of [1, 2, 3, 4]; track row) {
+      <app-skeleton height="3rem" radius="8px" class="row-skeleton" />
+    }
+  } @else if (!list()?.sheets?.length) {
+    <div class="mg-empty">
+      @if (hasFilters()) {
+        <strong>No sheets match these filters.</strong>
+        <button type="button" class="mg-link" (click)="clearFilters()">Clear the filters</button>
+      } @else if (box() === 'to-review') {
+        <strong>Nothing to review.</strong> Sheets the Deans send you will appear here.
+      } @else if (box() === 'to-file') {
+        <strong>Nothing to file.</strong> Sheets the DVC approves will appear here.
+      } @else {
+        <strong>No sheets here yet.</strong>
+      }
+    </div>
+  } @else {
+    <div class="mg-table-wrap">
+      <table class="mg-table mg-table--rows" [attr.aria-busy]="loading()">
+        <thead>
+          <tr>
+            @if (selectable()) {
+              <th class="check">
+                <input type="checkbox" aria-label="Select every sheet on this page" [checked]="allSelected()" (change)="toggleAll()" />
+              </th>
+            }
+            <th>Sheet</th>
+            <th>Department</th>
+            <th>Students</th>
+            <th>Sent to the DVC</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          @for (sheet of list()!.sheets; track sheet._id) {
+            <tr (click)="open(sheet._id)" (keydown.enter)="open(sheet._id)" tabindex="0">
+              @if (selectable()) {
+                <td class="check" (click)="$event.stopPropagation()">
+                  <input
+                    type="checkbox"
+                    [attr.aria-label]="'Select ' + kindLabel(sheet.kind) + ', ' + titleCase(sheet.department.name)"
+                    [checked]="selected().has(sheet._id)"
+                    (change)="toggle(sheet._id, $event)"
+                  />
+                </td>
+              }
+              <td>
+                {{ kindLabel(sheet.kind) }}
+                @if (sheet.pageNumber) {
+                  <span class="mg-chip mg-chip--muted">{{ pageCode(sheet.pageNumber) }}</span>
+                }
+                <span class="mg-cell-sub">{{ whenLabel(sheet) }}</span>
+              </td>
+              <td>
+                {{ titleCase(sheet.department.name) }}
+                <span class="mg-cell-sub">{{ titleCase(sheet.faculty.name) }}</span>
+              </td>
+              <td>{{ sheet.studentCount }}</td>
+              <td>{{ formatDate(sheet.sentToDvcAt) }}</td>
+              <td>
+                <span class="mg-chip" [class]="tone(sheet.status)">{{ statusLabel(sheet.status) }}</span>
+                @if (sheet.filedAt) {
+                  <span class="mg-cell-sub">Filed {{ formatDate(sheet.filedAt) }}</span>
+                }
+              </td>
+            </tr>
+          }
+        </tbody>
+      </table>
+    </div>
+    <app-pager [page]="page()" [limit]="limit" [total]="list()!.total" (pageChange)="setPage($event)" />
+  }
+</section>

@@ -1,0 +1,78 @@
+<a routerLink="/results" class="mg-link back">← {{ isDvc() ? 'Results to vet' : 'Approved results' }}</a>
+
+@if (missing()) {
+  <section class="mg-card mg-empty">
+    <strong>This sheet is not available to you.</strong>
+    It may not have reached your office yet.
+  </section>
+} @else if (!detail()) {
+  <app-skeleton height="2rem" width="40%" />
+  <app-skeleton height="24rem" radius="12px" class="sheet-skeleton" />
+} @else {
+  @let d = detail()!;
+  <div class="head">
+    <div>
+      <h1>{{ titleCase(d.department.name) }} · {{ kindLabel(d.kind) }}</h1>
+      <p>
+        {{ whenLabel(d) }} · {{ d.studentCount }} {{ d.studentCount === 1 ? 'student' : 'students' }}
+        @if (d.pageNumber) {
+          · {{ pageCode(d.pageNumber) }}
+        }
+      </p>
+      <p class="status-line">
+        <span class="mg-chip" [class]="tone()">{{ statusLabel(d.status) }}</span>
+      </p>
+    </div>
+    <div class="actions">
+      <button type="button" class="mg-btn mg-btn--outline" [disabled]="downloading()" (click)="download()">
+        {{ downloading() ? 'Preparing…' : 'Download PDF' }}
+      </button>
+      @if (canReturn()) {
+        <button type="button" class="mg-btn mg-btn--outline" [disabled]="busy()" (click)="returnToDean()">
+          Return to the Dean
+        </button>
+      }
+      @if (canApprove()) {
+        <button type="button" class="mg-btn" [disabled]="busy()" (click)="approve()">Approve</button>
+      }
+      @if (canFile()) {
+        <button type="button" class="mg-btn" [disabled]="busy()" (click)="file()">Mark as filed</button>
+      }
+    </div>
+  </div>
+
+  @if (d.status === 'RETURNED_TO_DEAN' && d.lastReturn) {
+    <div class="mg-banner">
+      <p>
+        Returned to the Dean on {{ formatDate(d.lastReturn.at) }} by {{ d.lastReturn.name }}:
+        “{{ d.lastReturn.reason }}”
+      </p>
+    </div>
+  }
+  @if (d.filedAt) {
+    <div class="mg-banner">
+      <p>
+        Filed by {{ d.filedByName }} on {{ formatDate(d.filedAt) }}@if (d.fileNote) { — {{ d.fileNote }}}.
+      </p>
+    </div>
+  }
+
+  <app-sheet-view [sheet]="d.sheet" [pageNumber]="d.pageNumber" [signOff]="d.signOff" />
+
+  <section class="mg-card trail" aria-label="Trail">
+    <h2 class="mg-section-title">Trail</h2>
+    <ol>
+      @for (event of d.history; track $index) {
+        <li>
+          <time>{{ formatDateTime(event.at) }}</time>
+          <div>
+            {{ actionLabel(event.action) }} · {{ event.name }}
+            @if (event.comment) {
+              <span class="trail__comment">“{{ event.comment }}”</span>
+            }
+          </div>
+        </li>
+      }
+    </ol>
+  </section>
+}
